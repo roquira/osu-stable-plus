@@ -1,0 +1,74 @@
+name: Bug report
+description: Report something in osu!stable+ that is not working correctly
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the beatmap and mod settings where relevant.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modes
+    attributes:
+      label: Game mode
+      multiple: true
+      options:
+        - osu!standard
+        - osu!taiko
+        - osu!catch
+        - osu!mania
+        - Not mode-specific
+
+  - type: input
+    id: version
+    attributes:
+      label: osu!stable+ version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: osu-version
+    attributes:
+      label: Game version
+      description: Shown at the bottom of the Options panel. Only the Stable release stream is supported.
+      placeholder: "b20260924.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vanilla
+    attributes:
+      label: Does the problem occur in unpatched osu!stable?
+      options:
+        - "No"
+        - "Not tested"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Attach `osu-stable-plus.log` from your osu! folder, plus screenshots or replays where relevant.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that may help.

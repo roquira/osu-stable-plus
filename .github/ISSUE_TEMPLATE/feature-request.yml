@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a change or new capability for osu!stable+
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem would this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What would you like osu!stable+ to do? If osu!lazer already has it, mention where.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modes
+    attributes:
+      label: Game mode
+      multiple: true
+      options:
+        - osu!standard
+        - osu!taiko
+        - osu!catch
+        - osu!mania
+        - Not mode-specific
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Are there any existing features or workarounds that come close?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add examples, screenshots, or references where useful.

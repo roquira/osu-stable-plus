@@ -1,9 +1,63 @@
+# Build output and release packages
 bin/
 obj/
 target/
 /packages/
+/dist/
+/artifacts/
+/publish/
+
+# Local IDE state and machine-specific launch configurations
 /_ReSharper.Caches/
-*.idea
+.vs/
+.idea/
+.vscode/
+.run/
 *.iml
-*DotSettings.user
+*.DotSettings
+*.DotSettings.user
+*.suo
+*.user
+*.rsuser
+
+# Test results and generated fixtures
 **/TestResult.xml
+/TestResults/
+/mode-pp-fixtures/
+/official-pp-fixture.osu*
+
+# Local tools, isolated game copies, and investigation artifacts
+/.scratch/
+/.tools/
+/docs/
+.agents/
+.codex/
+.claude/
+.codex-tmp/
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+*.binlog
+*.dmp
+*.mdmp
+*.stackdump
+
+# Unused branding and local design sources
+/.github/assets/logo.png
+*.psd
+
+# Runtime data: keep original imported metadata locally, but never commit it
+performance-cache/
+Logs/
+*.log
+osu-stable-plus.xml*
+osu!patcher.xml
+*.osr
+*.osz
+scores.db
+osu!.db
+collection.db
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db

@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      release: true
+
+  release:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Download tested release archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: artifacts
+
+      - name: Verify archive checksum
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          $name = "osu-stable-plus-$env:RELEASE_VERSION-win-x64.zip"
+          $expected = (Get-Content -LiteralPath "artifacts/$name.sha256" -Raw).Trim()
+          $hash = (Get-FileHash -LiteralPath "artifacts/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expected -ne "$hash  $name") { throw 'Release archive checksum mismatch.' }
+
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            artifacts/*.zip
+            artifacts/*.sha256
+
+      - name: Assemble and publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          $name = "osu-stable-plus-$env:RELEASE_VERSION-win-x64.zip"
+          $arguments = @('release', 'create', $env:GITHUB_REF_NAME,
+            "artifacts/$name", "artifacts/$name.sha256",
+            '--repo', $env:GITHUB_REPOSITORY, '--verify-tag', '--draft',
+            '--generate-notes', '--title', $env:GITHUB_REF_NAME)
+          if ($env:RELEASE_VERSION.Contains('-')) { $arguments += '--prerelease' }
+          & gh @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to create draft release.' }
+          & gh release edit $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --draft=false
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to publish release.' }

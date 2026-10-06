@@ -1,78 +1,154 @@
-<p align="center">
-  <img align="center" width="400" alt="osu! logo" src=".github/assets/logo.png">
-</p>
+# osu!stable+
 
-# osu! patcher
+[![Build](https://github.com/roquira/osu-stable-plus/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/roquira/osu-stable-plus/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/roquira/osu-stable-plus)](https://github.com/roquira/osu-stable-plus/releases/latest)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 
-Apply several fixes to osu! make playing Relax more enjoyable.
+osu!stable+ adds configurable mods and gameplay improvements to osu!stable.
 
-This is for use in offline play or private servers that allow modifications **only**.
-Use at your own risk! Modifications are disallowed on most servers, even though this project this 
-*does not provide an unfair advantage*.
+It lets you change DT, NC and HT rates, adjust HP/CS/AR/OD, mirror beatmaps, and save those settings with your scores and replays. It can also import and export supported mod settings to and from [osu!lazer](https://github.com/ppy/osu).
 
-Using this on official Bancho servers WILL get you banned.
+The patcher modifies the existing osu!stable client at runtime and is based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine/).
+
+> [!WARNING]
+> **osu!stable+ is intended for offline play only.** Do not use it while logged in.
+
+## Getting Started
+
+### Installation
+
+1. Download the latest release from the [Releases](../../releases) page.
+2. Extract the archive somewhere outside your osu! installation.
+3. Start osu!stable, then run `osu-stable-plus.exe`.
+   * Or launch and patch osu! in one step with a [shortcut](.github/assets/installation/create-shortcut.png) to `"C:\path\to\osu-stable-plus.exe" --launch "C:\path\to\osu!.exe"`.
+
+The download is large because it bundles osu!lazer's official pp calculators.
+
+> [!NOTE]
+> **osu!stable+ is experimental and may contain bugs or crashes.** Only the Stable release stream is officially supported, and game updates may temporarily break compatibility.
+
+### Usage
+
+Most gameplay settings are available directly from osu!'s **F1 mod menu**. Enable a supported mod and configure its settings from the **Mod Settings** drawer.
 
 ## Features
 
-### Relax
-- Show misses on hit objects while playing Relax
-- Re-enable combobreak sounds with Relax enabled
-- Save all Relax scores to local leaderboards automatically
-- Allow failing with Relax enabled
-- Re-enable the low hp glow (with shaders on)
+<table>
+<tr>
+<td width="50%">
 
-<sup>Note: Relax refers to Relax *or* Autopilot</sup>
+### Difficulty Adjust & Mirror
 
-### PP
-- Show a live pp counter during gameplay and replays
-- Switch between Bancho and ~~Akatsuki~~ (soon) pp calculators
-- ~~Show PP on local leaderboards~~ (soon)
+Override individual beatmap difficulty settings without modifying the map.
 
-### Mods
-- Always faintly show active mods during gameplay
-- Auto restart when failed due to Sudden Death mod
+* Adjust HP, CS, AR and OD in `0.1` increments
+* Mirror maps horizontally, vertically or across both axes
+* Integrated into the native mod menu
+* Compatible with custom rates
+<br>
+</td>
+<td width="50%" align="center">
 
-### UI
-- Increase the thumbnail opacity in song select
-- Allow opening settings during gameplay with Ctrl+O
-- Other miscellaneous fixes
+<img src=".github/assets/features/difficulty-adjust.png" alt="Difficulty Adjust controls" width="100%">
 
-<!-- ### Other -->
-<!-- - Download from beatmap mirrors when offline -->
+</td>
+</tr>
 
-## Usage
+<tr>
+<td width="50%" align="center">
 
-Until I have a release ready, then go to the [latest actions build](ehttps://github.com/rushiiMachine/osu-patcher/actions?query=branch%3Amaster) 
-for the `master` branch and download the attached artifact to extract. No automatic updater is included.
+<img src=".github/assets/features/custom-rates.png" alt="Custom rate controls" width="100%">
 
-Only the `Stable` release stream is officially supported! `Cutting Edge` and `Beta` release streams
-may have changes that cause errors or crashes. No support will be provided.
+</td>
+<td width="50%">
 
-Latest tested `Stable` version: [`b20250309.2`](https://osu.ppy.sh/home/changelog/stable40/20250309.2).
+### Custom DT, NC & HT rates
 
-Your antivirus may detect it as malware, however this is completely expected as it contains code to inject 
-into processes. If you aren't convinced it isn't a false positive, feel free to build from source code.
+Choose your playback speed directly from the mod menu.
 
-## Compiling
+* **Double Time / Nightcore:** `1.01x–2.00x`
+* **Half Time:** `0.50x–0.99x`
+* Optional pitch adjustment
+* Rate-aware BPM, length and difficulty display
+<br>
+</td>
+</tr>
 
-1. Install the .NET SDK 8, the .NET Framework 4.5.2 developer pack, and Rust (rustup/cargo).
-2. Run `dotnet build Osu.Patcher.Injector -c Release`
-3. Output will be located in `./Osu.Patcher.Injector/bin/Release/net8.0/`
+<tr>
+<td width="50%">
 
-## How
+### Scores & replays
 
-This uses [ManagedInjector](https://github.com/holly-hacker/ManagedInjector) to inject a .NET DLL into an osu! process, which uses [Harmony](https://github.com/pardeike/Harmony) to hook methods/
-rewrite IL instructions. To find obfuscated methods, "signatures" based on a portion of the IL instructions from the 
-target method are used to locate it, and then patch it. Since this method doesn't rely on neither the Eazfuscator 
-obfuscation key nor the obfuscated names, it should work on any version with matching IL even if the method names change.
+Preserve custom gameplay settings in scores and replays.
 
-## is this okay?
+* Custom rate and pitch metadata
+* Difficulty Adjust and Mirror settings
+* Import and export supported replays to and from osu!lazer (*experimental*)
+* Custom mod labels on local scores
+<br>
+</td>
+<td width="50%" align="center">
 
-This was initially made after the Akatsuki private server's patcher broke for multiple months and no alternative
-existed to fix the issues listed above. This project does not and never intends to bypass the
-anti-cheat built into osu! (to allow modifications), and for that reason this project is only usable when osu! is
-launched with a custom `-devserver` (for offline play, something like `-devserver example.com`).
+<img src=".github/assets/features/replays.png" alt="Imported replay and custom mod labels on the local leaderboard" width="100%">
 
-I like improving the games I like (having submitted multiple PRs to osu!lazer as well), and given stable is essentially
-dead in terms of bug-fixes and features I decided to write a utility to make the game I like better.
-This is not a cheat, I don't make cheats.
+</td>
+</tr>
+
+<tr>
+<td width="50%" align="center">
+
+<img src=".github/assets/features/gameplay.png" alt="Gameplay with live pp and custom mods" width="100%">
+
+</td>
+<td width="50%">
+
+### Gameplay & UI improvements
+
+Additional gameplay and interface improvements for osu!stable.
+
+* Official pp during gameplay and replays, local-score pp, and star ratings in all four modes
+* Show Relax / Autopilot misses
+* Automatic Sudden Death restart
+* Settings accessible during gameplay with `Ctrl+O`
+<br>
+</td>
+</tr>
+</table>
+
+### Compatibility
+
+Custom DT/NC/HT rates apply to **all four modes**. Difficulty Adjust and configurable Mirror apply to **osu!standard**. Mania retains its native column Mirror.
+
+Some lazer-specific mechanics cannot be reproduced exactly in stable. Imported lazer and stable scores retain their original scoring scales.
+
+## Development
+
+The injector loads a hook into the running osu!stable process, which patches the game with [Harmony](https://github.com/pardeike/Harmony). pp and star ratings come from a separate helper that runs osu!lazer's official calculators.
+
+### Requirements
+
+* [.NET 8 SDK](https://dotnet.microsoft.com/)
+* .NET Framework 4.5.2 and 4.6.2 targeting packs
+
+### Build
+
+```sh
+dotnet restore Osu.StablePlus.Performance.Engine -r win-x64 -p:SelfContained=true
+dotnet publish Osu.StablePlus.Injector -c Release -r win-x64 --self-contained true -o dist
+```
+
+Keep the `performance/` folder next to `osu-stable-plus.exe`.
+
+### Tests
+
+Run a test project with `dotnet run -c Release --project Osu.StablePlus.Tests`. Integration tests use the osu!stable folder in `OSU_PATH`; tests for specific maps or replays are skipped unless their `OSU_TEST_*` variables are set.
+
+Run `dotnet format osu-stable-plus.sln` before committing; CI rejects formatting differences.
+
+## License & Acknowledgements
+
+osu!stable+ is licensed under [GPL-3.0](LICENSE).
+
+Based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine).
+
+Project acknowledgements, bundled dependency licences and notices are collected in [CREDITS.md](CREDITS.md). Releases also include the notices from the bundled .NET runtime.

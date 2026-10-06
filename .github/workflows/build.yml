@@ -1,45 +1,128 @@
-name: Build & Test
+name: Build
 
 on:
   push:
-    branches-ignore: [ "release" ]
-    paths-ignore: [ "**.md" ]
+    branches: ['**']
   pull_request:
-    paths-ignore: [ "**.md" ]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+    outputs:
+      version:
+        value: ${{ jobs.build.outputs.version }}
+      artifact:
+        value: ${{ jobs.build.outputs.artifact }}
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 5
-    # Only run if this isn't a PR or this is a PR not from our repo
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact: osu-stable-plus-ci-${{ github.sha }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          dotnet-version: 8.x.x
+          persist-credentials: false
 
-      - name: Setup .NET Framework
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Setup Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          target: i686-pc-windows-msvc
+          dotnet-version: '8.0.x'
 
-      - name: Build
-        run: dotnet build Osu.Patcher.Injector
+      - name: Read version and validate release tag
+        id: version
+        shell: pwsh
+        env:
+          IS_RELEASE: ${{ inputs.release || false }}
+        run: |
+          [xml]$properties = Get-Content -LiteralPath 'Directory.Build.props' -Raw
+          $version = [string]$properties.Project.PropertyGroup.Version
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+            throw "Invalid project version: $version"
+          }
+          if ($env:IS_RELEASE -eq 'true' -and
+              ($env:GITHUB_REF_TYPE -ne 'tag' -or $env:GITHUB_REF_NAME -ne "v$version")) {
+            throw "Tag $env:GITHUB_REF_NAME does not match project version $version."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Upload Injector artifact
-        uses: actions/upload-artifact@v4
+      - name: Build, test, and package
+        shell: pwsh
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-Dotnet {
+            param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+            & dotnet @Arguments
+            if ($LASTEXITCODE -ne 0) { throw "dotnet $($Arguments -join ' ') failed ($LASTEXITCODE)." }
+          }
+
+          New-Item -ItemType Directory -Path artifacts, TestResults -Force | Out-Null
+          Invoke-Dotnet @('restore', 'osu-stable-plus.sln', '--locked-mode', '-m:1')
+          Invoke-Dotnet @('restore', 'Osu.StablePlus.Injector', '-r', 'win-x64', '-p:SelfContained=true', '--locked-mode', '-m:1')
+          Invoke-Dotnet @('restore', 'Osu.StablePlus.Performance.Engine', '-r', 'win-x64', '-p:SelfContained=true', '--locked-mode', '-m:1')
+          Invoke-Dotnet @('format', 'whitespace', 'osu-stable-plus.sln', '--no-restore', '--verify-no-changes')
+          Invoke-Dotnet @('format', 'style', 'osu-stable-plus.sln', '--no-restore', '--diagnostics', 'IDE0005', '--severity', 'info', '--verify-no-changes')
+          Invoke-Dotnet @('build', 'osu-stable-plus.sln', '-c', 'Release', '--no-restore', '-m:1')
+          Invoke-Dotnet @('publish', 'Osu.StablePlus.Injector', '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '--no-restore', '-m:1', '-o', 'artifacts/dist')
+
+          Invoke-Dotnet @('Osu.StablePlus.Performance.Engine.Tests/bin/Release/net8.0/Osu.StablePlus.Performance.Engine.Tests.dll', '--workers=0', '--result=TestResults/official-calculators.xml')
+          foreach ($suite in @('Osu.StablePlus.Stubs.Tests', 'Osu.StablePlus.Tests')) {
+            & "$suite/bin/Release/net462/$suite.exe" --workers=0 "--result=TestResults/$suite.xml"
+            if ($LASTEXITCODE -ne 0) { throw "$suite failed ($LASTEXITCODE)." }
+            if ($suite -eq 'Osu.StablePlus.Stubs.Tests') {
+              # Reuse the downloaded native fixture for hook/storyboard integration tests.
+              $env:OSU_PATH = (Resolve-Path "$suite/bin/Release/net462/osu!").Path
+            }
+          }
+
+          foreach ($relative in @('osu-stable-plus.exe', 'osu-stable-plus-hook.dll', 'LICENSE', 'README.md',
+              'CREDITS.md', 'DOTNET-LICENSE.txt', 'DOTNET-NOTICES.txt',
+              'performance/osu-stable-plus-performance.exe', 'performance/DOTNET-LICENSE.txt', 'performance/DOTNET-NOTICES.txt')) {
+            if (!(Test-Path -LiteralPath "artifacts/dist/$relative" -PathType Leaf)) {
+              throw "Missing distribution file: $relative"
+            }
+          }
+          foreach ($relative in @('docs', 'licenses', 'performance/licenses')) {
+            if (Test-Path -LiteralPath "artifacts/dist/$relative") { throw "Unexpected distribution directory: $relative" }
+          }
+          $autoMapper = Get-Item -LiteralPath artifacts/dist/performance/AutoMapper.dll
+          if ($autoMapper.VersionInfo.ProductVersion -notlike '14.0.3*') {
+            throw "Unexpected AutoMapper runtime entered the distribution: $($autoMapper.VersionInfo.ProductVersion)"
+          }
+          foreach ($assembly in @('System.Net.Http.dll', 'System.Text.RegularExpressions.dll')) {
+            $version = [version](Get-Item -LiteralPath "artifacts/dist/performance/$assembly").VersionInfo.FileVersion
+            if ($version.Major -lt 8) { throw "Legacy $assembly entered the distribution: $version" }
+          }
+
+          $name = "osu-stable-plus-$env:BUILD_VERSION-win-x64.zip"
+          Compress-Archive -Path artifacts/dist/* -DestinationPath "artifacts/$name" -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath "artifacts/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $name" | Set-Content -LiteralPath "artifacts/$name.sha256" -Encoding ascii
+
+      - name: Upload CI artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: osu!patcher-debug
+          name: osu-stable-plus-ci-${{ github.sha }}
+          path: |
+            artifacts/*.zip
+            artifacts/*.sha256
           if-no-files-found: error
-          path: .\Osu.Patcher.Injector\bin\Debug\net8.0\**
-      
-      - name: Run stub tests
-        run: dotnet run --project Osu.Stubs.Tests
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: osu-stable-plus-tests-${{ github.sha }}
+          path: TestResults/*.xml
+          if-no-files-found: ignore
+          retention-days: 7

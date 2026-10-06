@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <Product>osu!stable+</Product>
+    <Version>1.0.0</Version>
+    <Description>Offline extensions for osu!stable, based on rushiiMachine's osu! patcher.</Description>
+  </PropertyGroup>
+  <Target Name="IncludeRuntimeNotices" AfterTargets="ComputeFilesToPublish"
+          Condition="'$(SelfContained)' == 'true' and ('$(MSBuildProjectName)' == 'Osu.StablePlus.Injector' or '$(MSBuildProjectName)' == 'Osu.StablePlus.Performance.Engine')">
+    <ItemGroup>
+      <_DotnetNoticePack Include="@(ResolvedRuntimePack)"
+                         Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.NETCore.App'" />
+      <ResolvedFileToPublish Include="@(_DotnetNoticePack->'%(PackageDirectory)/LICENSE.TXT')">
+        <RelativePath>DOTNET-LICENSE.txt</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Include="@(_DotnetNoticePack->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')">
+        <RelativePath>DOTNET-NOTICES.txt</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+</Project>

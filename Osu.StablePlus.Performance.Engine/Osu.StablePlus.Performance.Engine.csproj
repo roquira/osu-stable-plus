@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <ApplicationIcon>../Osu.StablePlus.Injector/stable-plus.ico</ApplicationIcon>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AssemblyName>osu-stable-plus-performance</AssemblyName>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    </PropertyGroup>
+    <ItemGroup>
+        <!-- Replace ppy.osu.Game's vulnerable runtime with the patched, drop-in MIT fork. -->
+        <PackageReference Include="AutoMapper" Version="[13.0.1]" ExcludeAssets="runtime" PrivateAssets="all" />
+        <PackageReference Include="AutoMapperMIT" Version="[14.0.3]" />
+        <!-- Pin legacy NETStandard.Library metadata to patched versions; .NET 8 supplies the runtime assemblies. -->
+        <PackageReference Include="System.Net.Http" Version="[4.3.4]" ExcludeAssets="runtime" PrivateAssets="all" />
+        <PackageReference Include="System.Text.RegularExpressions" Version="[4.3.1]" ExcludeAssets="runtime" PrivateAssets="all" />
+        <!-- The advisory applies to the excluded upstream runtime, not the AutoMapperMIT assembly shipped above. -->
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
+        <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="[2026.730.0]" />
+        <PackageReference Include="ppy.osu.Game.Rulesets.Taiko" Version="[2026.730.0]" />
+        <PackageReference Include="ppy.osu.Game.Rulesets.Catch" Version="[2026.730.0]" />
+        <PackageReference Include="ppy.osu.Game.Rulesets.Mania" Version="[2026.730.0]" />
+        <Compile Include="../Osu.StablePlus.Performance/Contracts.cs" Link="Contracts.cs" />
+    </ItemGroup>
+</Project>

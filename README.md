@@ -6,12 +6,12 @@
 
 osu!stable+ adds configurable mods and gameplay improvements to osu!stable.
 
-It lets you change DT, NC and HT rates, adjust HP/CS/AR/OD, mirror beatmaps, and save those settings with your scores and replays. It can also import and export supported mod settings to and from [osu!lazer](https://github.com/ppy/osu).
+It lets you change DT, NC and HT rates, adjust HP/CS/AR/OD, mirror beatmaps, and save those settings with your scores and replays. It can also import and export supported mod settings to and from osu!lazer.
 
-The patcher modifies the existing osu!stable client at runtime and is based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine/).
+The patcher modifies the existing osu!stable client at runtime and is based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine).
 
 > [!WARNING]
-> **osu!stable+ is intended for offline play only.** Do not use it while logged in.
+> **For offline play only. Do not use it while logged in.**
 
 ## Getting Started
 
@@ -21,11 +21,6 @@ The patcher modifies the existing osu!stable client at runtime and is based on [
 2. Extract the archive somewhere outside your osu! installation.
 3. Start osu!stable, then run `osu-stable-plus.exe`.
    * Or launch and patch osu! in one step with a [shortcut](.github/assets/installation/create-shortcut.png) to `"C:\path\to\osu-stable-plus.exe" --launch "C:\path\to\osu!.exe"`.
-
-The download is large because it bundles osu!lazer's official pp calculators.
-
-> [!NOTE]
-> **osu!stable+ is experimental and may contain bugs or crashes.** Only the Stable release stream is officially supported, and game updates may temporarily break compatibility.
 
 ### Usage
 
@@ -83,7 +78,7 @@ Preserve custom gameplay settings in scores and replays.
 
 * Custom rate and pitch metadata
 * Difficulty Adjust and Mirror settings
-* Import and export supported replays to and from osu!lazer (*experimental*)
+* Import and export supported replays to and from osu!lazer
 * Custom mod labels on local scores
 <br>
 </td>
@@ -115,9 +110,11 @@ Additional gameplay and interface improvements for osu!stable.
 </tr>
 </table>
 
-### Compatibility
+## Compatibility
 
-Custom DT/NC/HT rates apply to **all four modes**. Difficulty Adjust and configurable Mirror apply to **osu!standard**. Mania retains its native column Mirror.
+osu!stable+ is experimental and does not support the Cutting Edge release stream. Some game updates may require a new version.
+
+Custom DT/NC/HT rates apply to all four modes. Difficulty Adjust and configurable Mirror apply to osu!standard; osu!mania retains its native column Mirror.
 
 Some lazer-specific mechanics cannot be reproduced exactly in stable. Imported lazer and stable scores retain their original scoring scales.
 
@@ -128,7 +125,6 @@ The injector loads a hook into the running osu!stable process, which patches the
 ### Requirements
 
 * [.NET 8 SDK](https://dotnet.microsoft.com/)
-* .NET Framework 4.5.2 and 4.6.2 targeting packs
 
 ### Build
 
@@ -147,8 +143,6 @@ Run `dotnet format osu-stable-plus.sln` before committing; CI rejects formatting
 
 ## License & Acknowledgements
 
-osu!stable+ is licensed under [GPL-3.0](LICENSE).
+osu!stable+ is licensed under [GPL-3.0](LICENSE) and based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine).
 
-Based on [osu! patcher](https://github.com/rushiiMachine/osu-patcher) by [rushiiMachine](https://github.com/rushiiMachine).
-
-Project acknowledgements, bundled dependency licences and notices are collected in [CREDITS.md](CREDITS.md). Releases also include the notices from the bundled .NET runtime.
+Third-party licences and acknowledgements are listed in [CREDITS.md](CREDITS.md).

@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <Product>osu!stable+</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Description>Offline extensions for osu!stable, based on rushiiMachine's osu! patcher.</Description>
   </PropertyGroup>
   <Target Name="IncludeRuntimeNotices" AfterTargets="ComputeFilesToPublish"

@@ -62,9 +62,9 @@ internal static class DifficultyModHud
 {
     internal static IEnumerable<MethodBase> DisplayMethods() => ModManager.Class.Reference.Assembly.GetTypes()
         .SelectMany(t => t.GetMethods(DifficultyControl.All)).Where(m => m.GetMethodBody() != null &&
-        MethodReader.GetInstructions(m).Any(i => Equals(i.Operand, Osu.StablePlus.Stubs.Root.Mods.Type.Reference)) &&
-        MethodReader.GetInstructions(m).Any(i => Equals(i.Operand, NativeModMenu.ModTexture)) &&
-        MethodReader.GetInstructions(m).Any(i => Equals(i.Operand, AccessTools.Method(typeof(Enum), nameof(Enum.GetValues)))));
+        MethodReader.References(m, Osu.StablePlus.Stubs.Root.Mods.Type.Reference) &&
+        MethodReader.References(m, NativeModMenu.ModTexture) &&
+        MethodReader.References(m, AccessTools.Method(typeof(Enum), nameof(Enum.GetValues))));
 
     [HarmonyTargetMethods]
     internal static IEnumerable<MethodBase> Targets() => DisplayMethods()

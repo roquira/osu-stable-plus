@@ -84,7 +84,11 @@ internal sealed class PatchLoadingScreen
         catch (Exception e) { Finish(e); }
     }
 
-    private static void Post(Action action, int delay = 50) => Delay.Invoke(GameBase.Scheduler.Get(),
+    // Steps run back to back until this much time has passed, then yield a frame.
+    private const int FrameBudget = 33;
+
+    // A zero delay runs on the scheduler's next update, after stable has drawn a frame.
+    private static void Post(Action action, int delay = 0) => Delay.Invoke(GameBase.Scheduler.Get(),
         [VoidDelegate.MakeInstance(action), delay, false]);
 
     private void Tick()
@@ -138,13 +142,17 @@ internal sealed class PatchLoadingScreen
                 Post(Tick);
                 return;
             }
-            // Each delayed callback performs one step, leaving time for native
-            // rendering/input processing before the next installation callback.
-            if (!steps.MoveNext()) { Finish(null); return; }
-            completed++;
+            // Each callback performs steps for up to a frame budget, then leaves stable
+            // a frame for native rendering/input processing before the next batch.
+            var frame = Stopwatch.StartNew();
+            do
+            {
+                if (!steps.MoveNext()) { Finish(null); return; }
+                completed++;
+                Console.WriteLine("[Initialize] " + steps.Current);
+            } while (frame.ElapsedMilliseconds < FrameBudget);
             pText.SetText.Invoke(title, [$"Loading {Product.Name}... {Math.Min(100, completed * 100 / total)}%"]);
             NativeModDrawer.Size(bar!, Math.Max(1, 300f * completed / total), 3);
-            Console.WriteLine("[Initialize] " + steps.Current);
             Post(Tick);
         }
         catch (Exception e) { Finish(e); }

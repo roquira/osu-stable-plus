@@ -8,6 +8,9 @@ namespace Osu.StablePlus.Utils.IL;
 
 public static class OpCodeMatcher
 {
+    internal const BindingFlags MethodFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    internal const BindingFlags ConstructorFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
     /// <summary>
     ///     Search for a method inside the osu! assembly by an IL OpCode signature.
     /// </summary>
@@ -21,14 +24,12 @@ public static class OpCodeMatcher
         bool entireMethod = false)
     {
         if (signature.Count <= 0) return null;
+        if (searchType == null && IlCache.Current is { } cache) return cache.Methods.Find(signature, entireMethod);
 
         var searchTypes = searchType == null ? OsuAssembly.Types : [searchType];
 
         foreach (var type in searchTypes)
-            foreach (var method in type.GetMethods(BindingFlags.Instance
-                                                   | BindingFlags.Static
-                                                   | BindingFlags.Public
-                                                   | BindingFlags.NonPublic))
+            foreach (var method in type.GetMethods(MethodFlags))
             {
                 var instructions = method.GetMethodBody()?.GetILAsByteArray();
                 if (instructions == null) continue;
@@ -53,13 +54,12 @@ public static class OpCodeMatcher
         bool entireMethod = false)
     {
         if (signature.Count <= 0) return null;
+        if (searchType == null && IlCache.Current is { } cache) return cache.Constructors.Find(signature, entireMethod);
 
         var searchTypes = searchType == null ? OsuAssembly.Types : [searchType];
 
         foreach (var type in searchTypes)
-            foreach (var method in type.GetConstructors(BindingFlags.Instance
-                                                        | BindingFlags.Public
-                                                        | BindingFlags.NonPublic))
+            foreach (var method in type.GetConstructors(ConstructorFlags))
             {
                 var instructions = method.GetMethodBody()?.GetILAsByteArray();
                 if (instructions == null) continue;
@@ -86,13 +86,22 @@ public static class OpCodeMatcher
         bool entireMethod)
     {
         if (signature.Count == 0) return false;
-        var instructions = new OpCodeReader(ilInstructions).GetOpCodes().ToArray();
+        var instructions = new OpCodeReader(ilInstructions).GetOpCodes().Select(op => op.Value).ToArray();
+        return Matches(instructions, signature.Select(op => op.Value).ToArray(), entireMethod);
+    }
+
+    /// <summary>
+    ///     Check if decoded opcode values contain (or are exactly) a signature's opcode values.
+    /// </summary>
+    internal static bool Matches(short[] instructions, short[] signature, bool entireMethod)
+    {
+        if (signature.Length == 0) return false;
         if (entireMethod) return instructions.SequenceEqual(signature);
 
-        for (var start = 0; start <= instructions.Length - signature.Count; start++)
+        for (var start = 0; start <= instructions.Length - signature.Length; start++)
         {
             var match = true;
-            for (var offset = 0; offset < signature.Count; offset++)
+            for (var offset = 0; offset < signature.Length; offset++)
                 if (instructions[start + offset] != signature[offset])
                 {
                     match = false;

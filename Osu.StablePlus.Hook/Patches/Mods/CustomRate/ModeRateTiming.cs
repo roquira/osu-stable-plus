@@ -100,8 +100,8 @@ internal static class ModeRateCalls
                 m != SelectionDetails.Tooltip && m != SelectionDetails.Update &&
                 // Detouring x87 double-return methods is unsafe in stable's CLR. Rewrite
                 // their consumers instead; unmanaged return conventions stay native.
-                m.ReturnType != typeof(double) && MethodReader.GetInstructions(m)
-                    .Any(i => i.Operand is MethodInfo call && (ModeRateTiming.Helpers.Contains(call) || ModeRateTiming.Wrappers.Contains(call))));
+                m.ReturnType != typeof(double) && ModeRateTiming.Helpers.Concat(ModeRateTiming.Wrappers)
+                    .Any(call => MethodReader.References(m, call)));
     }
     [HarmonyTranspiler]
     internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)

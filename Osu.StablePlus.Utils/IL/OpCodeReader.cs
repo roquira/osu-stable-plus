@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using Osu.StablePlus.Utils.Extensions;
@@ -43,13 +44,25 @@ internal class OpCodeReader
         _position = 0;
     }
 
-    public IEnumerable<OpCode> GetOpCodes()
+    /// <summary>
+    ///     Gets the opcode with the given <see cref="OpCode.Value" />.
+    /// </summary>
+    internal static OpCode FromValue(short value) =>
+        (value & 0xff00) == 0xfe00 ? TwoByteOpcodes[value & 0xff] : OneByteOpcodes[value];
+
+    public IEnumerable<OpCode> GetOpCodes() => GetOperandOffsets().Select(instruction => instruction.Key);
+
+    /// <summary>
+    ///     Reads every opcode together with the offset of its operand in the IL.
+    /// </summary>
+    internal IEnumerable<KeyValuePair<OpCode, int>> GetOperandOffsets()
     {
         while (_position < _ilInstructions.Count)
         {
             var op = ReadOpCode();
+            var operand = _position;
             AdvanceThroughOperand(op);
-            yield return op;
+            yield return new KeyValuePair<OpCode, int>(op, operand);
         }
     }
 

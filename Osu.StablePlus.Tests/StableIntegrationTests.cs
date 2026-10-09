@@ -33,6 +33,8 @@ public partial class StableIntegrationTests
         Osu.StablePlus.Stubs.Tests.OsuLoader.UpdateAndLoad().GetAwaiter().GetResult();
         PerformanceClient.HelperPath = Path.GetFullPath(Environment.GetEnvironmentVariable("PERFORMANCE_HELPER_PATH") ?? "Osu.StablePlus.Performance.Engine/bin/Release/net8.0/osu-stable-plus-performance.exe");
         harmony = new Harmony("osu-stable-plus.rate-tests");
+        // Resolve bindings with shared decoded IL, as the hook does during installation.
+        using var ilCache = IlCache.Begin();
         foreach (var type in new[] { typeof(TrackOnScoreHit), typeof(TrackResetScore), typeof(AddPerformanceToUi), typeof(AllowOpenOptionsInGameplay), typeof(AllowRelaxComboBreakSound), typeof(AllowRelaxDrawMisses),
                      typeof(AllowRelaxFailing), typeof(AllowRelaxLowHpGlow), typeof(AutoSaveRelaxScores),
                      typeof(CustomRatePlayback), typeof(ReadReplayRate), typeof(WriteReplayRate),

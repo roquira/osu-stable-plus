@@ -27,14 +27,10 @@ internal static class DifficultyControl
         .GetMethods(All).Where(m => m.GetMethodBody() != null).SelectMany(MethodReader.GetInstructions)
         .Select(i => i.Operand).OfType<MethodInfo>().Distinct().Single(m => m.IsStatic &&
             m.ReturnType == Beatmap.Class.Reference && m.GetParameters().Length == 0);
+    // A double operand can only come from ldc.r8.
     internal static readonly MethodInfo Timing = Beatmap.Class.Reference.Assembly.GetTypes()
         .SelectMany(t => t.GetMethods(All)).Where(m => m.GetMethodBody() != null).Single(m =>
-        {
-            var il = MethodReader.GetInstructions(m).ToArray();
-            return il.Any(i => i.Opcode == Ldc_R8 && Equals(i.Operand, 1800d)) &&
-                   il.Any(i => i.Opcode == Ldc_R8 && Equals(i.Operand, 450d)) &&
-                   il.Any(i => i.Opcode == Ldc_R8 && Equals(i.Operand, 80d));
-        });
+            MethodReader.References(m, 1800d) && MethodReader.References(m, 450d) && MethodReader.References(m, 80d));
     internal static readonly FieldInfo[] Fields = FindFields();
     private static readonly int GameplayMode = Convert.ToInt32(Enum.Parse(Osu.StablePlus.Stubs.Root.GameBase.Mode.Reference.FieldType, "Play"));
 
@@ -79,10 +75,14 @@ internal static class ApplyDifficultyAdjust
     internal static IEnumerable<MethodBase> Readers()
     {
         var manager = DifficultyControl.Timing.DeclaringType!;
+        // This health method already has the RX/AP sound patch. That patch
+        // composes our reads into its transpiler to avoid duplicate finalizers.
+        var comboBreak = Osu.StablePlus.Hook.Patches.Relax.AllowRelaxComboBreakSound.Target();
         foreach (var type in manager.Assembly.GetTypes())
             foreach (var method in type.GetMethods(DifficultyControl.All).Cast<MethodBase>())
             {
-                if (method.GetMethodBody() == null || type == Beatmap.Class.Reference) continue;
+                if (method.GetMethodBody() == null || type == Beatmap.Class.Reference ||
+                    !DifficultyControl.Fields.Any(field => MethodReader.References(method, field))) continue;
                 var il = MethodReader.GetInstructions(method).ToArray();
                 var reads = il.Where(i => i.Opcode == Ldfld).Select(i => i.Operand).OfType<FieldInfo>().ToArray();
                 if (!reads.Any(DifficultyControl.Fields.Contains)) continue;
@@ -90,10 +90,7 @@ internal static class ApplyDifficultyAdjust
                 var health = reads.Contains(DifficultyControl.Fields[0]) &&
                     ((method is MethodInfo m && m.ReturnType == typeof(double) && m.GetParameters().Length == 0) ||
                      (method.GetParameters().Length == 2 && method.GetParameters().All(p => !p.ParameterType.IsPrimitive)));
-                // This health method already has the RX/AP sound patch. That patch
-                // composes our reads into its transpiler to avoid duplicate finalizers.
-                if ((manager.IsAssignableFrom(type) || health) &&
-                    method != Osu.StablePlus.Hook.Patches.Relax.AllowRelaxComboBreakSound.Target()) yield return method;
+                if ((manager.IsAssignableFrom(type) || health) && method != comboBreak) yield return method;
             }
     }
 

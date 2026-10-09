@@ -9,6 +9,7 @@ using Osu.StablePlus.Hook.Patches;
 
 using Osu.StablePlus.Stubs.Wrappers;
 using Osu.StablePlus.Utils;
+using Osu.StablePlus.Utils.IL;
 
 namespace Osu.StablePlus.Hook;
 
@@ -19,6 +20,7 @@ public static class Hook
     private static int initializationStarted;
     // Owns the settings subscriptions for the game's lifetime; tests dispose their own instances.
     private static SettingsPersistence? settingsPersistence;
+    private static IDisposable? ilCache;
 
     /// <summary>
     ///     An instance of all patch options that have been initialized.
@@ -50,6 +52,8 @@ public static class Hook
 #endif
 
         Console.WriteLine($"[Initialize] Hook: {typeof(Hook).Assembly.Location}; build: {typeof(Hook).Module.ModuleVersionId}");
+        // Startup bindings scan the same method bodies many times. Share decoded IL until installation ends.
+        ilCache = IlCache.Begin();
         try
         {
             PatchingRuntime.Configure();
@@ -62,6 +66,7 @@ public static class Hook
             Console.WriteLine(e);
             try { Notifications.ShowMessage(e.Message, NotificationColor.Error, 20000); }
             catch { }
+            ReleaseIlCache();
             System.Threading.Interlocked.Exchange(ref initializationStarted, 0);
             InjectionGuard.Release();
             return 0;
@@ -84,6 +89,7 @@ public static class Hook
             var failures = 0;
             new PatchLoadingScreen(InstallSteps(osuDir, types, () => failures++), types.Length + 4, error =>
             {
+                ReleaseIlCache();
                 if (error != null)
                 {
                     Console.WriteLine(error);
@@ -101,10 +107,13 @@ public static class Hook
         }
         catch (Exception e)
         {
+            ReleaseIlCache();
             Console.WriteLine(e);
             ShowErrorNotification();
         }
     }
+
+    private static void ReleaseIlCache() => System.Threading.Interlocked.Exchange(ref ilCache, null)?.Dispose();
 
     private static IEnumerable<string> InstallSteps(string osuDir, Type[] types, Action failed)
     {
